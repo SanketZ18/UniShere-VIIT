@@ -1,0 +1,8 @@
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+frontend/node_modules/
+frontend/dist/
+backend/uploads/
+backend.zip
+*.log
+.DS_Store
