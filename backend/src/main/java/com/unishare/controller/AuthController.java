@@ -74,6 +74,24 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Account deleted successfully", null));
     }
 
+    @PostMapping("/{id}/toggle-status")
+    public ResponseEntity<ApiResponse<Void>> toggleStatus(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable String id
+    ) {
+        authService.toggleUserStatus(userDetails.getUsername(), id);
+        return ResponseEntity.ok(ApiResponse.success("User status updated", null));
+    }
+
+    @DeleteMapping("/bulk-delete-students")
+    public ResponseEntity<ApiResponse<Void>> bulkDeleteStudents(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam String batchYear
+    ) {
+        authService.bulkDeleteStudentsByBatch(userDetails.getUsername(), batchYear);
+        return ResponseEntity.ok(ApiResponse.success("Bulk deletion successful", null));
+    }
+
     @GetMapping("/users")
     public ResponseEntity<ApiResponse<List<UserProfileResponse>>> getAllUsers() {
         return ResponseEntity.ok(ApiResponse.success("Users fetched successfully", authService.getAllUsers()));

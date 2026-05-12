@@ -31,6 +31,7 @@ public class Student {
     private Integer year;
     private Integer semester;
     private String division;
+    private String batchYear;
     private UserStatus status;
     private LocalDate birthDate;
 

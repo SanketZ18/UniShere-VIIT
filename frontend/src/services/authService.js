@@ -29,3 +29,13 @@ export const deleteUserAccount = async (id) => {
   const response = await api.delete(`/auth/${id}`)
   return response.data.data
 }
+
+export const toggleUserStatus = async (id) => {
+  const response = await api.post(`/auth/${id}/toggle-status`)
+  return response.data.data
+}
+
+export const bulkDeleteStudentsByBatch = async (batchYear) => {
+  const response = await api.delete(`/auth/bulk-delete-students`, { params: { batchYear } })
+  return response.data.data
+}

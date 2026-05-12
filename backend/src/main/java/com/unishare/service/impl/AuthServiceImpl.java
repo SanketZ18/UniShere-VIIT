@@ -65,6 +65,8 @@ public class AuthServiceImpl implements AuthService {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
+        } catch (org.springframework.security.authentication.DisabledException disabledException) {
+            throw new BadRequestException("This account has been deactivated by the administration. Please contact your HOD or Senior Clerk.");
         } catch (Exception exception) {
             throw new BadCredentialsException("Invalid email or password");
         }
@@ -201,6 +203,48 @@ public class AuthServiceImpl implements AuthService {
         log.info("Account {} deleted by {}", target.getEmail(), callerEmail);
     }
 
+    @Override
+    @Transactional
+    public void toggleUserStatus(String callerEmail, String targetAccountId) {
+        UserAccount caller = accountDirectoryService.getByEmail(callerEmail);
+        UserAccount target = userAccountRepository.findById(targetAccountId)
+                .orElseThrow(() -> new BadRequestException("Target account not found"));
+
+        if (!List.of(Role.HOD, Role.SENIOR_CLERK, Role.DIRECTOR, Role.SUPER_ADMIN).contains(caller.getRole())) {
+            throw new UnauthorizedOperationException("Only HODs, Clerks, or higher roles can manage account status");
+        }
+
+        if (caller.getRole() != Role.SUPER_ADMIN && !canManageRole(caller.getRole(), target.getRole())) {
+            throw new UnauthorizedOperationException("You do not have permission to manage account with role " + target.getRole());
+        }
+
+        target.setActive(!target.isActive());
+        userAccountRepository.save(target);
+        log.info("Account {} status toggled to {} by {}", target.getEmail(), target.isActive(), callerEmail);
+    }
+
+    @Override
+    @Transactional
+    public void bulkDeleteStudentsByBatch(String callerEmail, String batchYear) {
+        UserAccount caller = accountDirectoryService.getByEmail(callerEmail);
+        
+        if (!List.of(Role.HOD, Role.SENIOR_CLERK, Role.DIRECTOR, Role.SUPER_ADMIN).contains(caller.getRole())) {
+            throw new UnauthorizedOperationException("Only HODs, Clerks, or higher roles can perform bulk deletions");
+        }
+
+        List<Student> students = studentRepository.findByBatchYear(batchYear);
+        if (students.isEmpty()) {
+            throw new BadRequestException("No students found for batch " + batchYear);
+        }
+
+        for (Student student : students) {
+            userAccountRepository.findByUserId(student.getId()).ifPresent(userAccountRepository::delete);
+            studentRepository.delete(student);
+        }
+        
+        log.info("Bulk deletion of {} students in batch {} performed by {}", students.size(), batchYear, callerEmail);
+    }
+
     private boolean canManageRole(Role callerRole, Role targetRole) {
         return switch (callerRole) {
             case SUPER_ADMIN -> true;
@@ -294,6 +338,7 @@ public class AuthServiceImpl implements AuthService {
                 .year(request.getYear())
                 .semester(request.getSemester())
                 .division(request.getDivision())
+                .batchYear(request.getBatchYear())
                 .status(request.getStatus())
                 .birthDate(request.getBirthDate())
                 .build());

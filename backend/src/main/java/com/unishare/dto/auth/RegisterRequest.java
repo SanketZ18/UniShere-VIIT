@@ -59,6 +59,7 @@ public class RegisterRequest {
     private Integer semester;
 
     private String division;
+    private String batchYear;
     private String staffId;
     private String designation;
 

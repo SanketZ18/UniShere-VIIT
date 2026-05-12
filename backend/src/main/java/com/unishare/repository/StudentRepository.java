@@ -13,4 +13,6 @@ public interface StudentRepository extends MongoRepository<Student, String> {
     boolean existsByPrn(String prn);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    java.util.List<Student> findByBatchYear(String batchYear);
 }

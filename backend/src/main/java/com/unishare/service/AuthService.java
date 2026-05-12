@@ -19,6 +19,10 @@ public interface AuthService {
     UserProfileResponse updateProfile(String email, com.unishare.dto.ProfileUpdateRequest request);
 
     void deleteAccount(String email, String targetId);
+    
+    void toggleUserStatus(String callerEmail, String targetId);
+
+    void bulkDeleteStudentsByBatch(String callerEmail, String batchYear);
 
     List<UserProfileResponse> getAllUsers();
 

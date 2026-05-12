@@ -60,7 +60,8 @@ public final class PortalMapper {
                 gender,
                 birthDate,
                 account.getRole(),
-                department
+                department,
+                account.isActive()
         );
     }
 

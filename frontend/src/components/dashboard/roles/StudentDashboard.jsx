@@ -17,7 +17,7 @@ export default function StudentDashboard({ user, summary }) {
   const stats = [
     { label: 'Resources', value: summary?.totalResources || 0, icon: BookOpen, shell: 'bg-amber-100 text-amber-700' },
     { label: 'Downloads', value: summary?.totalDownloads || 0, icon: BookOpen, shell: 'bg-orange-100 text-orange-700' },
-    { label: 'Peer Access', value: 'Active', icon: Users, shell: 'bg-emerald-100 text-emerald-700' },
+    { label: 'Peer Access', value: user?.active ? 'Active' : 'Locked', icon: Users, shell: user?.active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' },
   ]
 
   return (

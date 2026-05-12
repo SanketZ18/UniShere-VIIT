@@ -30,6 +30,8 @@ public class UserAccount implements UserDetails {
     private String userId;
     private Instant lastLogin;
 
+    private boolean active = true;
+
     @CreatedDate
     private Instant createdAt;
 
@@ -60,6 +62,6 @@ public class UserAccount implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return active;
     }
 }

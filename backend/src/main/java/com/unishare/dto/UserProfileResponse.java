@@ -12,6 +12,7 @@ public record UserProfileResponse(
         com.unishare.model.enums.Gender gender,
         java.time.LocalDate birthDate,
         Role role,
-        Department department
+        Department department,
+        boolean active
 ) {
 }

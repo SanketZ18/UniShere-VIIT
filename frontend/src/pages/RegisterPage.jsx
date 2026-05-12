@@ -1,8 +1,8 @@
 import { useAuth } from '../hooks/useAuth'
 import { useSearchParams } from 'react-router-dom'
-import { Eye, EyeOff, Trash2, FileSpreadsheet, UserPlus, ShieldCheck, Database, RefreshCw } from 'lucide-react'
+import { Eye, EyeOff, Trash2, FileSpreadsheet, UserPlus, ShieldCheck, Database, RefreshCw, UserCheck, UserX, AlertTriangle } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { fetchAllUsers, deleteUserAccount } from '../services/authService'
+import { fetchAllUsers, deleteUserAccount, toggleUserStatus, bulkDeleteStudentsByBatch } from '../services/authService'
 import RolePill from '../components/ui/RolePill'
 
 const roleOptions = ['STUDENT', 'STAFF', 'HOD', 'SENIOR_CLERK', 'DIRECTOR', 'SUPER_ADMIN']
@@ -25,6 +25,7 @@ const initialState = {
   designation: '',
   subjects: '',
   birthDate: '',
+  batchYear: '',
 }
 
 export default function RegisterPage() {
@@ -155,6 +156,32 @@ export default function RegisterPage() {
       loadUsers()
     } catch {
       setResult({ type: 'error', message: 'Failed to delete user.' })
+    }
+  }
+
+  const handleToggleStatus = async (userId) => {
+    try {
+      await toggleUserStatus(userId)
+      setResult({ type: 'success', message: 'User access status updated.' })
+      loadUsers()
+    } catch {
+      setResult({ type: 'error', message: 'Failed to update user status.' })
+    }
+  }
+
+  const handleBulkDeleteByBatch = async (batch) => {
+    if (!batch) {
+      setResult({ type: 'error', message: 'Please provide a Batch Year for bulk deletion.' })
+      return
+    }
+    if (!window.confirm(`WARNING: Are you sure you want to delete ALL students in Batch ${batch}? This action is IRREVERSIBLE.`)) return
+    
+    try {
+      await bulkDeleteStudentsByBatch(batch)
+      setResult({ type: 'success', message: `All students in Batch ${batch} have been deleted.` })
+      loadUsers()
+    } catch (error) {
+      setResult({ type: 'error', message: error.response?.data?.message || 'Bulk deletion failed.' })
     }
   }
 
@@ -293,6 +320,10 @@ export default function RegisterPage() {
                     <input required value={form.prn} onChange={(e) => setForm({ ...form, prn: e.target.value })} className="portal-form-field w-full px-4 py-3 text-sm" />
                   </div>
                   <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-950 uppercase tracking-widest ml-1">Batch Year (e.g. 2022-26)</label>
+                    <input required placeholder="2022-26" value={form.batchYear} onChange={(e) => setForm({ ...form, batchYear: e.target.value })} className="portal-form-field w-full px-4 py-3 text-sm" />
+                  </div>
+                  <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-950 uppercase tracking-widest ml-1">Division</label>
                     <input required value={form.division} onChange={(e) => setForm({ ...form, division: e.target.value })} className="portal-form-field w-full px-4 py-3 text-sm" />
                   </div>
@@ -367,6 +398,29 @@ export default function RegisterPage() {
                </div>
              </div>
           </section>
+
+          {/* Bulk Cleanup Tools */}
+          <section className="portal-panel portal-3d rounded-2xl p-8 border-rose-500/10 bg-rose-500/5">
+             <h3 className="text-lg font-bold text-rose-950 mb-6 flex items-center gap-3">
+                <AlertTriangle size={18} className="text-rose-600" />
+                Registry Cleanup
+             </h3>
+             <p className="text-[10px] font-bold text-rose-900 uppercase tracking-widest mb-4">Wipe Data by Batch Year</p>
+             <div className="space-y-4">
+                <input 
+                  type="text" 
+                  placeholder="Enter Batch (e.g. 2022-26)" 
+                  id="bulkBatchInput"
+                  className="portal-form-field w-full px-4 py-2.5 text-xs font-bold border-rose-200 focus:border-rose-500" 
+                />
+                <button 
+                  onClick={() => handleBulkDeleteByBatch(document.getElementById('bulkBatchInput').value)}
+                  className="w-full rounded-xl bg-rose-600 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-rose-600/20 hover:bg-rose-700 transition"
+                >
+                  Confirm Batch Wipe
+                </button>
+             </div>
+          </section>
         </div>
       </div>
 
@@ -398,7 +452,9 @@ export default function RegisterPage() {
               <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-widest text-slate-900">
                 <th className="pb-4 text-left font-bold">Institutional Identity</th>
                 <th className="pb-4 text-left font-bold">Student Name</th>
+                <th className="pb-4 text-left font-bold">Batch</th>
                 <th className="pb-4 text-left font-bold">Department</th>
+                <th className="pb-4 text-left font-bold">Access</th>
                 <th className="pb-4 text-right font-bold">Actions</th>
               </tr>
             </thead>
@@ -416,11 +472,27 @@ export default function RegisterPage() {
                   <td className="py-5">
                     <div className="text-base font-bold text-slate-950">{u.fullName}</div>
                   </td>
+                  <td className="py-5 text-sm font-bold text-amber-600 uppercase tracking-widest">{u.batchYear || 'N/A'}</td>
                   <td className="py-5 text-sm font-bold text-slate-700 uppercase tracking-wider">{u.department} {u.year ? `• Y${u.year}` : ''}</td>
+                  <td className="py-5">
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${u.active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                      {u.active ? <UserCheck size={10} /> : <UserX size={10} />}
+                      {u.active ? 'Active' : 'Locked'}
+                    </span>
+                  </td>
                   <td className="py-5 text-right">
-                    <button onClick={() => handleDeleteUser(u.id)} className="rounded-lg p-2 text-rose-500/40 hover:bg-rose-500/10 hover:text-rose-500 transition">
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex justify-end gap-2">
+                      <button 
+                        onClick={() => handleToggleStatus(u.id)} 
+                        title={u.active ? 'Deactivate Access' : 'Activate Access'}
+                        className={`rounded-lg p-2 transition ${u.active ? 'text-amber-500/40 hover:bg-amber-500/10 hover:text-amber-600' : 'text-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-600'}`}
+                      >
+                        {u.active ? <UserX size={16} /> : <UserCheck size={16} />}
+                      </button>
+                      <button onClick={() => handleDeleteUser(u.id)} className="rounded-lg p-2 text-rose-500/40 hover:bg-rose-500/10 hover:text-rose-500 transition">
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
