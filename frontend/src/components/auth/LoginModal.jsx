@@ -61,7 +61,7 @@ export default function LoginModal({ isOpen, onClose }) {
           <p className="mt-6 text-[10px] font-black uppercase tracking-[0.24em] text-amber-700">Institutional Access</p>
           <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-[2.1rem]">Sign in to UniShare</h2>
           <p className="mt-4 max-w-sm text-sm font-semibold leading-7 text-slate-800">
-            Access your academic workspace from a simple popup with a soft light palette and a cleaner, easier form.
+            Access your academic workspace.
           </p>
         </div>
 
