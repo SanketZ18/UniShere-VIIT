@@ -2,7 +2,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, Trash2, FileSpreadsheet, UserPlus, ShieldCheck, Database, RefreshCw, UserCheck, UserX, AlertTriangle } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { fetchAllUsers, deleteUserAccount, toggleUserStatus, bulkDeleteStudentsByBatch } from '../services/authService'
+import { fetchAllUsers, deleteUserAccount, toggleUserStatus, bulkDeleteStudentsByBatch, bulkRegisterStudents } from '../services/authService'
 import RolePill from '../components/ui/RolePill'
 
 const roleOptions = ['STUDENT', 'STAFF', 'HOD', 'SENIOR_CLERK', 'DIRECTOR', 'SUPER_ADMIN']
@@ -128,21 +128,12 @@ export default function RegisterPage() {
     const formData = new FormData()
     formData.append('file', excelFile)
     try {
-      const response = await fetch('/api/auth/bulk-register-students', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        body: formData
-      })
-      const data = await response.json()
-      if (response.ok) {
-        setResult({ type: 'success', message: data.message })
-        setExcelFile(null)
-        loadUsers()
-      } else {
-        throw new Error(data.message)
-      }
+      const response = await bulkRegisterStudents(formData)
+      setResult({ type: 'success', message: response.message })
+      setExcelFile(null)
+      loadUsers()
     } catch (error) {
-      setResult({ type: 'error', message: error.message || 'Bulk registration failed.' })
+      setResult({ type: 'error', message: error.response?.data?.message || 'Bulk registration failed.' })
     } finally {
       setBulkProcessing(false)
     }
@@ -184,10 +175,12 @@ export default function RegisterPage() {
       // Optimistic update
       setUsers(prev => prev.filter(u => u.batchYear !== batch))
       await bulkDeleteStudentsByBatch(batch)
-      setResult({ type: 'success', message: `All students in Batch ${batch} have been deleted.` })
+      setResult({ type: 'success', message: `SUCCESS: Registry wiped for Batch ${batch}. All associated student profiles and accounts have been permanently removed.` })
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (error) {
       setResult({ type: 'error', message: error.response?.data?.message || 'Bulk deletion failed.' })
       loadUsers() // Rollback
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }
 

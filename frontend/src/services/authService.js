@@ -39,3 +39,12 @@ export const bulkDeleteStudentsByBatch = async (batchYear) => {
   const response = await api.delete(`/auth/bulk-delete-students`, { params: { batchYear } })
   return response.data.data
 }
+
+export const bulkRegisterStudents = async (formData) => {
+  const response = await api.post('/auth/bulk-register-students', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return response.data // Returning full response to get message
+}

@@ -47,13 +47,19 @@ public class ExcelServiceImpl implements ExcelService {
                     // Col 3: Mobile
                     request.setMobile(getCellValue(currentRow.getCell(3)));
                     // Col 4: Gender (MALE/FEMALE/OTHER)
-                    request.setGender(Gender.valueOf(getCellValue(currentRow.getCell(4)).toUpperCase()));
+                    String genderStr = getCellValue(currentRow.getCell(4));
+                    if (!genderStr.isBlank()) {
+                        request.setGender(Gender.valueOf(genderStr.toUpperCase()));
+                    }
                     // Col 5: Department (MCA/MBA)
-                    request.setDepartment(Department.valueOf(getCellValue(currentRow.getCell(5)).toUpperCase()));
+                    String deptStr = getCellValue(currentRow.getCell(5));
+                    if (!deptStr.isBlank()) {
+                        request.setDepartment(Department.valueOf(deptStr.toUpperCase()));
+                    }
                     // Col 6: Year
-                    request.setYear((int) currentRow.getCell(6).getNumericCellValue());
+                    request.setYear(getNumericValue(currentRow.getCell(6)));
                     // Col 7: Semester
-                    request.setSemester((int) currentRow.getCell(7).getNumericCellValue());
+                    request.setSemester(getNumericValue(currentRow.getCell(7)));
                     // Col 8: Division
                     request.setDivision(getCellValue(currentRow.getCell(8)));
                     
@@ -85,6 +91,20 @@ public class ExcelServiceImpl implements ExcelService {
             throw new RuntimeException("Failed to parse Excel file: " + e.getMessage());
         }
         return requests;
+    }
+
+    private int getNumericValue(Cell cell) {
+        if (cell == null) return 0;
+        try {
+            if (cell.getCellType() == CellType.NUMERIC) {
+                return (int) cell.getNumericCellValue();
+            } else if (cell.getCellType() == CellType.STRING) {
+                return Integer.parseInt(cell.getStringCellValue().trim());
+            }
+        } catch (Exception e) {
+            log.warn("Failed to parse numeric value from cell: {}", e.getMessage());
+        }
+        return 0;
     }
 
     private String getCellValue(Cell cell) {
