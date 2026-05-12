@@ -13,6 +13,7 @@ public record UserProfileResponse(
         java.time.LocalDate birthDate,
         Role role,
         Department department,
+        String batchYear,
         boolean active
 ) {
 }

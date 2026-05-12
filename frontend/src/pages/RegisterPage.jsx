@@ -151,21 +151,25 @@ export default function RegisterPage() {
   const handleDeleteUser = async (userId) => {
     if (!window.confirm('Delete this user? This cannot be undone.')) return
     try {
+      // Optimistic update: remove user from local state immediately
+      setUsers(prev => prev.filter(u => u.accountId !== userId))
       await deleteUserAccount(userId)
       setResult({ type: 'success', message: 'User deleted.' })
-      loadUsers()
     } catch {
       setResult({ type: 'error', message: 'Failed to delete user.' })
+      loadUsers() // Rollback on error
     }
   }
 
   const handleToggleStatus = async (userId) => {
     try {
+      // Optimistic update: toggle status in local state immediately
+      setUsers(prev => prev.map(u => u.accountId === userId ? { ...u, active: !u.active } : u))
       await toggleUserStatus(userId)
       setResult({ type: 'success', message: 'User access status updated.' })
-      loadUsers()
     } catch {
       setResult({ type: 'error', message: 'Failed to update user status.' })
+      loadUsers() // Rollback on error
     }
   }
 
@@ -177,11 +181,13 @@ export default function RegisterPage() {
     if (!window.confirm(`WARNING: Are you sure you want to delete ALL students in Batch ${batch}? This action is IRREVERSIBLE.`)) return
     
     try {
+      // Optimistic update
+      setUsers(prev => prev.filter(u => u.batchYear !== batch))
       await bulkDeleteStudentsByBatch(batch)
       setResult({ type: 'success', message: `All students in Batch ${batch} have been deleted.` })
-      loadUsers()
     } catch (error) {
       setResult({ type: 'error', message: error.response?.data?.message || 'Bulk deletion failed.' })
+      loadUsers() // Rollback
     }
   }
 
@@ -464,7 +470,7 @@ export default function RegisterPage() {
               ) : filteredUsers.length === 0 ? (
                 <tr><td colSpan="4" className="py-20 text-center text-xs font-bold text-slate-800 uppercase tracking-[0.2em]">No records found for this node</td></tr>
               ) : filteredUsers.map((u) => (
-                <tr key={u.id} className="group transition hover:bg-slate-50/50">
+                <tr key={u.accountId} className="group transition hover:bg-slate-50/50">
                   <td className="py-5">
                     <div className="text-xs font-bold text-slate-900">{u.email}</div>
                     <div className="text-[10px] text-slate-800 font-bold mt-0.5">{u.role}</div>
@@ -483,14 +489,18 @@ export default function RegisterPage() {
                   <td className="py-5 text-right">
                     <div className="flex justify-end gap-2">
                       <button 
-                        onClick={() => handleToggleStatus(u.id)} 
+                        onClick={() => handleToggleStatus(u.accountId)} 
                         title={u.active ? 'Deactivate Access' : 'Activate Access'}
-                        className={`rounded-lg p-2 transition ${u.active ? 'text-amber-500/40 hover:bg-amber-500/10 hover:text-amber-600' : 'text-emerald-500/40 hover:bg-emerald-500/10 hover:text-emerald-600'}`}
+                        className={`rounded-lg p-2 transition shadow-sm ${u.active ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
                       >
-                        {u.active ? <UserX size={16} /> : <UserCheck size={16} />}
+                        {u.active ? <UserX size={18} /> : <UserCheck size={18} />}
                       </button>
-                      <button onClick={() => handleDeleteUser(u.id)} className="rounded-lg p-2 text-rose-500/40 hover:bg-rose-500/10 hover:text-rose-500 transition">
-                        <Trash2 size={16} />
+                      <button 
+                        onClick={() => handleDeleteUser(u.accountId)} 
+                        className="rounded-lg p-2 bg-rose-100 text-rose-700 hover:bg-rose-200 transition shadow-sm"
+                        title="Delete User"
+                      >
+                        <Trash2 size={18} />
                       </button>
                     </div>
                   </td>
