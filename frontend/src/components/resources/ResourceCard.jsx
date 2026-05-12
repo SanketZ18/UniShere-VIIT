@@ -16,7 +16,7 @@ const typeStyles = {
   ANNOUNCEMENT: 'bg-emerald-100 text-emerald-700 border-emerald-200',
 }
 
-export default function ResourceCard({ resource, userRole, onBookmark, onDelete, onDownload }) {
+export default function ResourceCard({ resource, userRole, onBookmark, onDelete, onDownload, isDownloading }) {
   const canDelete = ['SUPER_ADMIN', 'DIRECTOR', 'HOD', 'STAFF'].includes(userRole)
   
   const isNew = resource.createdAt && (new Date() - new Date(resource.createdAt)) < 24 * 60 * 60 * 1000
@@ -102,11 +102,12 @@ export default function ResourceCard({ resource, userRole, onBookmark, onDelete,
             ) : (
               <button
                 type="button"
+                disabled={isDownloading}
                 onClick={() => onDownload(resource.id, resource.fileName)}
-                className="portal-button-primary inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em]"
+                className={`portal-button-primary inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] ${isDownloading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                <Download size={14} />
-                Download
+                <Download size={14} className={isDownloading ? 'animate-bounce' : ''} />
+                {isDownloading ? 'Downloading...' : 'Download'}
               </button>
             )}
           </div>

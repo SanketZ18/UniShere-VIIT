@@ -74,6 +74,8 @@ export default function ResourcesPage() {
     })
   }
 
+  const [downloadingId, setDownloadingId] = useState(null)
+
   const handleBookmark = async (resourceId) => {
     const response = await toggleBookmark(resourceId)
     setResources((current) =>
@@ -86,6 +88,17 @@ export default function ResourcesPage() {
   const handleDelete = async (resourceId) => {
     await deleteResource(resourceId)
     setResources((current) => current.filter((resource) => resource.id !== resourceId))
+  }
+
+  const handleDownload = async (resourceId, fileName) => {
+    setDownloadingId(resourceId)
+    try {
+      await downloadResource(resourceId, fileName)
+    } catch (downloadError) {
+      alert(downloadError.response?.data?.message || 'Download failed. The file might have been lost from ephemeral storage or is currently unavailable.')
+    } finally {
+      setDownloadingId(null)
+    }
   }
 
   return (
@@ -117,7 +130,8 @@ export default function ResourcesPage() {
             userRole={user.role}
             onBookmark={handleBookmark}
             onDelete={handleDelete}
-            onDownload={downloadResource}
+            onDownload={handleDownload}
+            isDownloading={downloadingId === resource.id}
           />
         ))}
       </section>
