@@ -18,7 +18,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-@Service
+//@Service
 public class LocalFileStorageService implements FileStorageService {
 
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
