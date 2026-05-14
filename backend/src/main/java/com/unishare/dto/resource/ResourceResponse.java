@@ -20,6 +20,8 @@ public record ResourceResponse(
         Integer semester,
         long downloadCount,
         boolean bookmarked,
+        boolean isExternal,
         Instant createdAt
+
 ) {
 }

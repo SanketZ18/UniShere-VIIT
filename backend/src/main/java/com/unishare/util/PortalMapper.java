@@ -83,7 +83,9 @@ public final class PortalMapper {
                 resource.getSemester(),
                 resource.getDownloadCount(),
                 bookmarked,
+                resource.getStorageFileName() == null || resource.getStorageFileName().isBlank(),
                 resource.getCreatedAt()
         );
     }
+
 }

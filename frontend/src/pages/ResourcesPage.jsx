@@ -90,24 +90,26 @@ export default function ResourcesPage() {
     setResources((current) => current.filter((resource) => resource.id !== resourceId))
   }
 
-  const handleDownload = async (resourceId, fileName, fileUrl) => {
-    // If it's a direct external link (SPPU or Cloudinary), open it directly to avoid CORS issues with AJAX
-    if (fileUrl && fileUrl.startsWith('http') && !fileUrl.includes('/api/resources/')) {
-      // We still hit the backend download endpoint to increment the counter,
-      // but we do it via a direct browser navigation so it follows the redirect.
-      window.open(`/api/resources/${resourceId}/download`, '_blank')
+  const handleDownload = async (resource, fileName) => {
+    // If it's an external resource (SPPU), open it directly in a new tab 
+    // to avoid CORS issues with AJAX and follow the backend's redirect.
+    if (resource.isExternal) {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+      const downloadUrl = `${baseUrl}/resources/${resource.id}/download`
+      window.open(downloadUrl, '_blank')
       return
     }
 
-    setDownloadingId(resourceId)
+    setDownloadingId(resource.id)
     try {
-      await downloadResource(resourceId, fileName)
+      await downloadResource(resource.id, fileName)
     } catch (downloadError) {
       alert(downloadError.response?.data?.message || 'Download failed. The file might have been lost from ephemeral storage or is currently unavailable.')
     } finally {
       setDownloadingId(null)
     }
   }
+
 
   return (
     <div className="space-y-8">
@@ -138,7 +140,8 @@ export default function ResourcesPage() {
             userRole={user.role}
             onBookmark={handleBookmark}
             onDelete={handleDelete}
-            onDownload={() => handleDownload(resource.id, resource.fileName, resource.fileUrl)}
+            onDownload={() => handleDownload(resource, resource.fileName)}
+
             isDownloading={downloadingId === resource.id}
           />
         ))}
