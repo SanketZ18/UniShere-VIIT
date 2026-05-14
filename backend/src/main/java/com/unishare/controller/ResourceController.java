@@ -76,12 +76,13 @@ public class ResourceController {
     }
 
     @GetMapping("/{id}/download")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> downloadResource(
             @PathVariable String id,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        ResourceService.DownloadableResource downloadableResource = resourceService.download(id, userDetails.getUsername());
+        String viewerEmail = userDetails != null ? userDetails.getUsername() : null;
+        ResourceService.DownloadableResource downloadableResource = resourceService.download(id, viewerEmail);
+
         
         // If the storage name is a URL (Cloudinary), redirect the user directly to the cloud storage
         // This is more efficient and avoids ephemeral storage issues

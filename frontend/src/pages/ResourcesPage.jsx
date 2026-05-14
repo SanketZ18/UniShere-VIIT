@@ -90,25 +90,12 @@ export default function ResourcesPage() {
     setResources((current) => current.filter((resource) => resource.id !== resourceId))
   }
 
-  const handleDownload = async (resource, fileName) => {
-    // If it's an external resource (SPPU), open it directly in a new tab 
-    // to avoid CORS issues with AJAX and follow the backend's redirect.
-    if (resource.isExternal) {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
-      const downloadUrl = `${baseUrl}/resources/${resource.id}/download`
-      window.open(downloadUrl, '_blank')
-      return
-    }
-
-    setDownloadingId(resource.id)
-    try {
-      await downloadResource(resource.id, fileName)
-    } catch (downloadError) {
-      alert(downloadError.response?.data?.message || 'Download failed. The file might have been lost from ephemeral storage or is currently unavailable.')
-    } finally {
-      setDownloadingId(null)
-    }
+  const handleDownload = (resourceId) => {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
+    const downloadUrl = `${baseUrl}/resources/${resourceId}/download`
+    window.open(downloadUrl, '_blank')
   }
+
 
 
   return (
@@ -140,7 +127,8 @@ export default function ResourcesPage() {
             userRole={user.role}
             onBookmark={handleBookmark}
             onDelete={handleDelete}
-            onDownload={() => handleDownload(resource, resource.fileName)}
+            onDownload={() => handleDownload(resource.id)}
+
 
             isDownloading={downloadingId === resource.id}
           />
