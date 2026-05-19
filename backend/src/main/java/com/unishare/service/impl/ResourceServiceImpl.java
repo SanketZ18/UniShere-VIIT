@@ -103,6 +103,8 @@ public class ResourceServiceImpl implements ResourceService {
         }
         if (type != null && !type.isBlank()) {
             query.addCriteria(Criteria.where("type").is(ResourceType.valueOf(type.toUpperCase())));
+        } else {
+            query.addCriteria(Criteria.where("type").ne(ResourceType.ANNOUNCEMENT));
         }
         if (department != null && !department.isBlank()) {
             query.addCriteria(Criteria.where("department").is(Department.valueOf(department.toUpperCase())));

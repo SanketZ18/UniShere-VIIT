@@ -11,14 +11,23 @@ import {
   Trash2,
   TrendingUp,
   Users,
+  Upload,
+  X,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
-import { deleteResource } from '../../../services/resourceService'
+import { useState, useEffect } from 'react'
+import { fetchNotices, uploadNotice, deleteNotice } from '../../../services/noticeService'
 
 export default function HodDashboard({ user, summary }) {
-  const [announcements, setAnnouncements] = useState(summary?.recentAnnouncements || [])
+  const [announcements, setAnnouncements] = useState([])
   const [deletingId, setDeletingId] = useState(null)
+  
+  // Notice Form State
+  const [showModal, setShowModal] = useState(false)
+  const [formDept, setFormDept] = useState(user?.department || 'MCA')
+  const [formInfo, setFormInfo] = useState('')
+  const [formFile, setFormFile] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const stats = [
     { label: 'Total Students', value: summary?.totalStudents || 0, icon: Users, shell: 'bg-amber-100 text-amber-700' },
@@ -26,22 +35,90 @@ export default function HodDashboard({ user, summary }) {
     { label: 'Faculty', value: summary?.totalStaff || 0, icon: ShieldCheck, shell: 'bg-emerald-100 text-emerald-700' },
   ]
 
+  // Fresh load notices on component mount
+  useEffect(() => {
+    let active = true
+    const load = async () => {
+      try {
+        const data = await fetchNotices()
+        if (active) {
+          // Map backend notice structure to the dashboard list structure
+          const mapped = data.map(n => ({
+            id: n.id,
+            title: n.information,
+            description: n.information,
+            type: 'ANNOUNCEMENT',
+            subject: n.department + ' Department',
+            uploadedBy: '',
+            uploaderName: n.uploaderName,
+            fileUrl: n.fileUrl,
+            fileName: n.fileName,
+            createdAt: n.createdAt
+          }))
+          setAnnouncements(mapped)
+        }
+      } catch (err) {
+        console.error('Failed to load notices', err)
+      }
+    }
+    load()
+    return () => { active = false }
+  }, [])
+
   const handleDeleteAnnouncement = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this announcement?')) return
+    if (!window.confirm('Are you sure you want to delete this notice?')) return
     
     setDeletingId(id)
     try {
-      await deleteResource(id)
+      await deleteNotice(id)
       setAnnouncements(prev => prev.filter(a => a.id !== id))
     } catch (err) {
-      alert('Failed to delete announcement.')
+      alert('Failed to delete notice.')
     } finally {
       setDeletingId(null)
     }
   }
 
+  const handleSubmitNotice = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    try {
+      const formData = new FormData()
+      formData.append('department', formDept)
+      formData.append('information', formInfo)
+      if (formFile) {
+        formData.append('file', formFile)
+      }
+      
+      const newNotice = await uploadNotice(formData)
+      
+      const mappedNotice = {
+        id: newNotice.id,
+        title: newNotice.information,
+        description: newNotice.information,
+        type: 'ANNOUNCEMENT',
+        subject: newNotice.department + ' Department',
+        uploadedBy: '',
+        uploaderName: newNotice.uploaderName,
+        fileUrl: newNotice.fileUrl,
+        fileName: newNotice.fileName,
+        createdAt: newNotice.createdAt
+      }
+      
+      setAnnouncements(prev => [mappedNotice, ...prev])
+      setShowModal(false)
+      setFormInfo('')
+      setFormFile(null)
+    } catch (err) {
+      console.error(err)
+      alert('Failed to publish notice. Make sure notice details are filled and files (if selected) are within allowed types.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
-    <div className="space-y-6 pb-8 animate-in">
+    <div className="space-y-6 pb-8 animate-in relative">
       <section className="portal-banner rounded-[2.4rem] p-8 sm:p-10">
         <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-3xl">
@@ -86,10 +163,13 @@ export default function HodDashboard({ user, summary }) {
                 </div>
                 <h2 className="mt-4 text-2xl font-black text-slate-900">Manage Department Notices</h2>
               </div>
-              <Link to="/upload" className="portal-button-primary flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-black uppercase tracking-[0.18em]">
+              <button
+                onClick={() => setShowModal(true)}
+                className="portal-button-primary flex items-center gap-2 rounded-2xl px-5 py-2.5 text-xs font-black uppercase tracking-[0.18em]"
+              >
                 <PlusCircle size={15} />
                 Add New
-              </Link>
+              </button>
             </div>
 
             <div className="space-y-4">
@@ -99,21 +179,36 @@ export default function HodDashboard({ user, summary }) {
                     key={announcement.id}
                     className="portal-3d flex items-center justify-between gap-4 rounded-[1.6rem] border border-slate-100 bg-slate-50/50 p-5 transition hover:border-amber-200 hover:bg-white"
                   >
-                    <div className="flex min-w-0 items-center gap-4">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                    <div className="flex min-w-0 flex-1 items-center gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 animate-pulse">
                         <Bell size={22} />
                       </div>
-                      <div className="min-w-0">
-                        <h3 className="truncate text-sm font-black uppercase tracking-[0.08em] text-slate-900">{announcement.title}</h3>
-                        <p className="mt-1 truncate text-[10px] font-black uppercase tracking-[0.18em] text-slate-600">
-                          {announcement.type} | {new Date(announcement.createdAt).toLocaleDateString()}
-                        </p>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="line-clamp-2 text-sm font-black text-slate-900">{announcement.title}</h3>
+                        <div className="mt-2 flex flex-wrap items-center gap-3">
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-slate-700">
+                            {announcement.subject || 'Notice'}
+                          </span>
+                          <span className="text-[9px] text-slate-500 font-semibold uppercase tracking-[0.05em]">
+                            {new Date(announcement.createdAt).toLocaleDateString()}
+                          </span>
+                          {announcement.fileUrl && (
+                            <a
+                              href={announcement.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-[0.18em] text-amber-700 hover:text-amber-800"
+                            >
+                              View Attachment
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <button
                       disabled={deletingId === announcement.id}
                       onClick={() => handleDeleteAnnouncement(announcement.id)}
-                      className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -207,6 +302,92 @@ export default function HodDashboard({ user, summary }) {
           </div>
         </section>
       </div>
+
+      {/* Modern Notice Creation Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="portal-panel portal-3d relative w-full max-w-lg rounded-[2.5rem] bg-white p-8 shadow-[0_32px_64px_rgba(15,23,42,0.22)] border border-slate-100 animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => {
+                setShowModal(false)
+                setFormInfo('')
+                setFormFile(null)
+              }}
+              className="absolute right-6 top-6 flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-50 text-slate-500 hover:bg-slate-100 transition-colors"
+            >
+              <X size={18} />
+            </button>
+            <div className="portal-chip text-[10px] font-black uppercase tracking-[0.22em] text-amber-700 mb-4 inline-flex">
+              <Bell size={12} className="mr-1" />
+              Publish Department Notice
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 mb-6">Create New Notice</h3>
+            
+            <form onSubmit={handleSubmitNotice} className="space-y-5">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-2">Target Department</label>
+                <select
+                  value={formDept}
+                  onChange={(e) => setFormDept(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-semibold text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition"
+                >
+                  <option value="MCA">MCA Department</option>
+                  <option value="MBA">MBA Department</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-2">Notice Information</label>
+                <textarea
+                  value={formInfo}
+                  onChange={(e) => setFormInfo(e.target.value)}
+                  placeholder="Type the academic notice details or information here..."
+                  rows={4}
+                  required
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-sm font-medium text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none transition resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 mb-2">File Attachment (Optional)</label>
+                <div className="relative flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 hover:border-amber-500 transition-all">
+                  <input
+                    type="file"
+                    onChange={(e) => setFormFile(e.target.files[0])}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                  />
+                  <Upload size={24} className="text-slate-400 mb-2 animate-bounce" />
+                  <span className="text-xs font-black uppercase tracking-[0.1em] text-slate-700 text-center max-w-[200px] truncate">
+                    {formFile ? formFile.name : 'Select or drag notice file'}
+                  </span>
+                  <span className="mt-1 text-[9px] font-semibold text-slate-500 uppercase tracking-[0.05em]">PDF, JPG, PNG, WEBP, DOCX</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false)
+                    setFormInfo('')
+                    setFormFile(null)
+                  }}
+                  className="flex-1 rounded-2xl bg-slate-100 py-3.5 text-xs font-black uppercase tracking-[0.18em] text-slate-700 hover:bg-slate-200 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 portal-button-primary flex items-center justify-center gap-2 rounded-2xl py-3.5 text-xs font-black uppercase tracking-[0.18em] disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Publishing...' : 'Publish Notice'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

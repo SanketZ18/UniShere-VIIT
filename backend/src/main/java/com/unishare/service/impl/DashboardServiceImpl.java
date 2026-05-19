@@ -3,10 +3,12 @@ package com.unishare.service.impl;
 import com.unishare.dto.dashboard.DashboardStatsResponse;
 import com.unishare.dto.resource.ResourceResponse;
 import com.unishare.model.Resource;
+import com.unishare.model.Notice;
 import com.unishare.model.UserAccount;
 import com.unishare.repository.BookmarkRepository;
 import com.unishare.repository.DownloadLogRepository;
 import com.unishare.repository.ResourceRepository;
+import com.unishare.repository.NoticeRepository;
 import com.unishare.repository.StaffRepository;
 import com.unishare.repository.StudentRepository;
 import com.unishare.repository.UserAccountRepository;
@@ -26,6 +28,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final StudentRepository studentRepository;
     private final StaffRepository staffRepository;
     private final ResourceRepository resourceRepository;
+    private final NoticeRepository noticeRepository;
     private final DownloadLogRepository downloadLogRepository;
     private final BookmarkRepository bookmarkRepository;
     private final UserAccountRepository userAccountRepository;
@@ -74,11 +77,28 @@ public class DashboardServiceImpl implements DashboardService {
                 .map(resource -> PortalMapper.toResourceResponse(resource, false))
                 .toList();
 
-        List<ResourceResponse> recentAnnouncements = resources.stream()
-                .filter(r -> r.getType() == com.unishare.model.enums.ResourceType.ANNOUNCEMENT || r.getType() == com.unishare.model.enums.ResourceType.BLOG)
-                .sorted(Comparator.comparing(Resource::getCreatedAt).reversed())
+        List<ResourceResponse> recentAnnouncements = noticeRepository.findAll().stream()
+                .sorted(Comparator.comparing(Notice::getCreatedAt).reversed())
                 .limit(5)
-                .map(resource -> PortalMapper.toResourceResponse(resource, false))
+                .map(notice -> new ResourceResponse(
+                        notice.getId(),
+                        notice.getInformation(),
+                        notice.getInformation(),
+                        com.unishare.model.enums.ResourceType.ANNOUNCEMENT,
+                        notice.getDepartment().name() + " Department",
+                        notice.getUploadedBy(),
+                        notice.getUploaderName(),
+                        notice.getFileUrl(),
+                        notice.getFileName(),
+                        notice.getContentType(),
+                        notice.getDepartment(),
+                        1,
+                        1,
+                        0L,
+                        false,
+                        false,
+                        notice.getCreatedAt().atZone(java.time.ZoneId.systemDefault()).toInstant()
+                ))
                 .toList();
 
         return new DashboardStatsResponse(
@@ -97,3 +117,4 @@ public class DashboardServiceImpl implements DashboardService {
         );
     }
 }
+

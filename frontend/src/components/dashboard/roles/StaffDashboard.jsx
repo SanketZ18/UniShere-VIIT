@@ -128,16 +128,35 @@ export default function StaffDashboard({ user, summary }) {
             <div className="mt-6 space-y-4">
               {summary?.recentAnnouncements?.length ? (
                 summary.recentAnnouncements.slice(0, 3).map((announcement) => (
-                  <div
-                    key={announcement.id}
-                    className="portal-3d rounded-[1.5rem] border border-slate-100 bg-slate-50/50 p-4 transition hover:border-amber-200 hover:bg-white"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700">Active Notice</p>
-                      <Clock size={12} className="text-slate-700" />
+                  announcement.fileUrl ? (
+                    <a
+                      key={announcement.id}
+                      href={announcement.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="portal-3d block rounded-[1.5rem] border border-slate-100 bg-slate-50/50 p-4 transition hover:border-amber-200 hover:bg-white"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[9px] font-black uppercase tracking-[0.15em] text-emerald-700">
+                          {announcement.subject || 'Active Notice'}
+                        </p>
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.1em] text-amber-800">
+                          Attachment
+                        </span>
+                      </div>
+                      <h3 className="mt-2 line-clamp-2 text-sm font-black text-slate-900">{announcement.title}</h3>
+                    </a>
+                  ) : (
+                    <div
+                      key={announcement.id}
+                      className="portal-3d block rounded-[1.5rem] border border-slate-100 bg-slate-50/50 p-4 bg-slate-50/30"
+                    >
+                      <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-600">
+                        {announcement.subject || 'Active Notice'}
+                      </p>
+                      <h3 className="mt-2 text-sm font-semibold text-slate-900">{announcement.title}</h3>
                     </div>
-                    <h3 className="mt-2 line-clamp-2 text-sm font-black text-slate-900">{announcement.title}</h3>
-                  </div>
+                  )
                 ))
               ) : (
                 <p className="text-sm font-medium text-slate-700">No department notices available right now.</p>
