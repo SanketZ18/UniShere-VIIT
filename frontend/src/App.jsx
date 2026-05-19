@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './components/ui/ProtectedRoute'
 import DashboardLayout from './layouts/DashboardLayout'
@@ -10,6 +11,20 @@ import UploadPage from './pages/UploadPage'
 import ProfilePage from './pages/ProfilePage'
 
 function App() {
+  useEffect(() => {
+    // Silently pre-warm the Render free-tier backend on app mount
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085/api'
+    const healthUrl = apiBaseUrl.replace(/\/api\/?$/, '/actuator/health')
+    
+    fetch(healthUrl)
+      .then((res) => {
+        console.log('UniShare backend pre-warm status:', res.status)
+      })
+      .catch((err) => {
+        console.warn('UniShare backend pre-warm offline/waking up:', err)
+      })
+  }, [])
+
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
