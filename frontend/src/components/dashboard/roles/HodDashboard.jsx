@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { fetchNotices, uploadNotice, deleteNotice } from '../../../services/noticeService'
 import { fetchTimetable, saveTimetable } from '../../../services/timetableService'
+import TimetableRenderer from '../TimetableRenderer'
 
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 const createEmptySchedule = () => DAYS_OF_WEEK.map(day => ({ day, slots: [] }))
@@ -38,8 +39,8 @@ export default function HodDashboard({ user, summary }) {
   const [activeTab, setActiveTab] = useState('notices') // 'notices' or 'timetable'
   const [selectedDept, setSelectedDept] = useState(user?.department || 'MCA')
   const [selectedSem, setSelectedSem] = useState(1)
-  const [schedule, setSchedule] = useState([])
-  const [activeEditorDay, setActiveEditorDay] = useState('Monday')
+  const [timetableObject, setTimetableObject] = useState(null)
+  const [loadingTimetable, setLoadingTimetable] = useState(false)
   const [isSavingTimetable, setIsSavingTimetable] = useState(false)
 
   const stats = [
@@ -83,18 +84,19 @@ export default function HodDashboard({ user, summary }) {
     let active = true
     const loadTimetable = async () => {
       try {
+        setLoadingTimetable(true)
         const data = await fetchTimetable(selectedDept, selectedSem)
         if (active) {
-          if (data && data.schedule) {
-            setSchedule(data.schedule)
-          } else {
-            setSchedule(createEmptySchedule())
-          }
+          setTimetableObject(data || null)
         }
       } catch (err) {
         console.error('Failed to load timetable', err)
         if (active) {
-          setSchedule(createEmptySchedule())
+          setTimetableObject(null)
+        }
+      } finally {
+        if (active) {
+          setLoadingTimetable(false)
         }
       }
     }
@@ -155,46 +157,16 @@ export default function HodDashboard({ user, summary }) {
   }
 
   // Timetable Handlers
-  const handleUpdateSlot = (dayName, slotIndex, field, value) => {
-    setSchedule(prev => prev.map(daySch => {
-      if (daySch.day !== dayName) return daySch
-      const updatedSlots = daySch.slots.map((slot, idx) => {
-        if (idx !== slotIndex) return slot
-        return { ...slot, [field]: value }
-      })
-      return { ...daySch, slots: updatedSlots }
-    }))
-  }
-
-  const handleAddSlot = (dayName) => {
-    setSchedule(prev => prev.map(daySch => {
-      if (daySch.day !== dayName) return daySch
-      return {
-        ...daySch,
-        slots: [...daySch.slots, { time: '', subject: '', teacher: '', classroom: '' }]
-      }
-    }))
-  }
-
-  const handleRemoveSlot = (dayName, slotIndex) => {
-    setSchedule(prev => prev.map(daySch => {
-      if (daySch.day !== dayName) return daySch
-      return {
-        ...daySch,
-        slots: daySch.slots.filter((_, idx) => idx !== slotIndex)
-      }
-    }))
-  }
-
-  const handleSaveTimetable = async () => {
+  const handleSaveTimetable = async (updatedTimetableData) => {
     setIsSavingTimetable(true)
     try {
-      await saveTimetable({
+      const savedData = await saveTimetable({
         department: selectedDept,
         semester: Number(selectedSem),
-        schedule
+        ...updatedTimetableData
       })
-      alert(`Weekly Timetable for ${selectedDept} - Semester ${selectedSem} saved successfully!`)
+      setTimetableObject(savedData)
+      alert(`Weekly Timetable for ${selectedDept} - Semester ${selectedSem} saved and published successfully!`)
     } catch (err) {
       console.error(err)
       alert('Failed to save weekly timetable. Please check all details.')
@@ -397,7 +369,7 @@ export default function HodDashboard({ user, summary }) {
               </div>
 
               {/* selectors */}
-              <div className="grid gap-4 sm:grid-cols-2 bg-slate-50 p-6 rounded-[1.6rem] mb-6">
+              <div className="grid gap-4 sm:grid-cols-2 bg-slate-50 p-6 rounded-[1.6rem] mb-6 border border-slate-100">
                 <div>
                   <label className="block text-[10px] font-black uppercase tracking-[0.15em] text-slate-700 mb-2">Department</label>
                   <select
@@ -423,105 +395,20 @@ export default function HodDashboard({ user, summary }) {
                 </div>
               </div>
 
-              {/* Day Tab Selector */}
-              <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-100 pb-4">
-                {DAYS_OF_WEEK.map(day => (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => setActiveEditorDay(day)}
-                    className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-[0.1em] transition ${
-                      activeEditorDay === day
-                        ? 'bg-amber-100 text-amber-900 font-extrabold shadow-sm'
-                        : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                ))}
-              </div>
-
-              {/* Slots List */}
-              <div className="space-y-4 mb-6">
-                {schedule.find(daySch => daySch.day === activeEditorDay)?.slots.length ? (
-                  schedule.find(daySch => daySch.day === activeEditorDay).slots.map((slot, idx) => (
-                    <div key={idx} className="flex flex-wrap items-center gap-3 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative group animate-in slide-in-from-bottom-2 duration-200">
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 flex-1">
-                        <div>
-                          <label className="block text-[9px] font-black uppercase tracking-[0.1em] text-slate-500 mb-1">Time Slot</label>
-                          <input
-                            type="text"
-                            value={slot.time}
-                            onChange={(e) => handleUpdateSlot(activeEditorDay, idx, 'time', e.target.value)}
-                            placeholder="e.g. 09:00 AM - 10:00 AM"
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-amber-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[9px] font-black uppercase tracking-[0.1em] text-slate-500 mb-1">Subject</label>
-                          <input
-                            type="text"
-                            value={slot.subject}
-                            onChange={(e) => handleUpdateSlot(activeEditorDay, idx, 'subject', e.target.value)}
-                            placeholder="e.g. Advanced Java"
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-amber-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[9px] font-black uppercase tracking-[0.1em] text-slate-500 mb-1">Teacher</label>
-                          <input
-                            type="text"
-                            value={slot.teacher}
-                            onChange={(e) => handleUpdateSlot(activeEditorDay, idx, 'teacher', e.target.value)}
-                            placeholder="e.g. Prof. Patil"
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-amber-500"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[9px] font-black uppercase tracking-[0.1em] text-slate-500 mb-1">Classroom</label>
-                          <input
-                            type="text"
-                            value={slot.classroom}
-                            onChange={(e) => handleUpdateSlot(activeEditorDay, idx, 'classroom', e.target.value)}
-                            placeholder="e.g. Classroom 402"
-                            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-800 outline-none focus:border-amber-500"
-                          />
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSlot(activeEditorDay, idx)}
-                        className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600 transition hover:bg-rose-100 shrink-0 self-end mb-0.5"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/20 px-6 py-10 text-center">
-                    <p className="text-xs font-black uppercase tracking-[0.15em] text-slate-600">No lectures scheduled for {activeEditorDay} yet</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => handleAddSlot(activeEditorDay)}
-                  className="portal-button-secondary rounded-2xl px-5 py-3 text-xs font-black uppercase tracking-[0.18em] flex items-center gap-2"
-                >
-                  <PlusCircle size={15} />
-                  Add Lecture Slot
-                </button>
-                <button
-                  type="button"
-                  disabled={isSavingTimetable}
-                  onClick={handleSaveTimetable}
-                  className="portal-button-primary rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-[0.18em] flex items-center justify-center gap-2 ml-auto"
-                >
-                  {isSavingTimetable ? 'Saving...' : 'Save Weekly Timetable'}
-                </button>
-              </div>
+              {loadingTimetable ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full animate-spin mb-4" />
+                  <p className="text-xs font-black uppercase tracking-wider text-slate-500">Retrieving department schedule...</p>
+                </div>
+              ) : (
+                <TimetableRenderer
+                  timetableData={timetableObject}
+                  key={`${selectedDept}-${selectedSem}-${JSON.stringify(timetableObject)}`}
+                  isEditMode={true}
+                  onSave={handleSaveTimetable}
+                  isSaving={isSavingTimetable}
+                />
+              )}
             </div>
           )}
         </section>

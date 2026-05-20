@@ -14,11 +14,14 @@ import {
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { fetchTimetable } from '../../../services/timetableService'
+import TimetableRenderer from '../TimetableRenderer'
+import { X } from 'lucide-react'
 
 export default function StudentDashboard({ user, summary }) {
   const [timetable, setTimetable] = useState(null)
   const [activeDay, setActiveDay] = useState('Monday')
   const [loadingTimetable, setLoadingTimetable] = useState(true)
+  const [showTimetableModal, setShowTimetableModal] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -193,16 +196,27 @@ export default function StudentDashboard({ user, summary }) {
           </div>
 
           <div className="portal-panel portal-3d rounded-[2.4rem] p-8">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
-                <Calendar size={22} />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                  <Calendar size={22} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-700">Weekly Timetable</p>
+                  <h3 className="mt-1 text-base font-black text-slate-900">
+                    {user?.department || 'MCA'} - Sem {user?.semester || 1}
+                  </h3>
+                </div>
               </div>
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-700">Weekly Timetable</p>
-                <h3 className="mt-1 text-base font-black text-slate-900">
-                  {user?.department || 'MCA'} - Sem {user?.semester || 1}
-                </h3>
-              </div>
+
+              {timetable && (
+                <button
+                  onClick={() => setShowTimetableModal(true)}
+                  className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-[10px] font-black uppercase tracking-wider transition border border-amber-200/50"
+                >
+                  View Full
+                </button>
+              )}
             </div>
 
             {loadingTimetable ? (
@@ -231,7 +245,7 @@ export default function StudentDashboard({ user, summary }) {
                 </div>
 
                 {/* Slots display */}
-                <div className="space-y-3">
+                <div className="space-y-3 mb-4">
                   {timetable.schedule.find(s => s.day === activeDay)?.slots.length ? (
                     timetable.schedule.find(s => s.day === activeDay).slots.map((slot, index) => (
                       <div key={index} className="p-3 bg-slate-50/50 hover:bg-white rounded-xl border border-slate-100 transition duration-150">
@@ -252,6 +266,14 @@ export default function StudentDashboard({ user, summary }) {
                     </div>
                   )}
                 </div>
+
+                <button
+                  onClick={() => setShowTimetableModal(true)}
+                  className="w-full text-center py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black uppercase tracking-[0.15em] shadow-md hover:shadow-lg transition flex items-center justify-center gap-2"
+                >
+                  <Search size={14} />
+                  Full High-Fidelity Timetable
+                </button>
               </>
             ) : (
               <div className="text-center py-8 px-4 bg-slate-50/30 rounded-xl border border-dashed border-slate-200">
@@ -262,6 +284,36 @@ export default function StudentDashboard({ user, summary }) {
           </div>
         </section>
       </div>
+
+      {/* Stunning high-fidelity full screen schedule modal */}
+      {showTimetableModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto bg-white rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <button
+              onClick={() => setShowTimetableModal(false)}
+              className="absolute top-6 right-6 p-2 rounded-full bg-slate-100 text-slate-700 hover:bg-rose-50 hover:text-rose-600 transition"
+            >
+              <X size={20} />
+            </button>
+            <div className="mb-6">
+              <span className="portal-chip text-[10px] font-black uppercase tracking-[0.22em] bg-amber-50 text-amber-700">
+                <Calendar size={12} className="inline mr-1" />
+                Cohort Master Schedule
+              </span>
+              <h2 className="text-2xl font-black text-slate-900 mt-2">
+                Weekly Class Timetable & Syllabus
+              </h2>
+              <p className="text-xs text-slate-500 font-bold uppercase mt-1">
+                Department: {user?.department || 'MCA'} | Semester: {user?.semester || 1}
+              </p>
+            </div>
+
+            <div className="border-t border-slate-100 pt-6">
+              <TimetableRenderer timetableData={timetable} isEditMode={false} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

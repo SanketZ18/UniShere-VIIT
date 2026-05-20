@@ -36,7 +36,14 @@ public class TimetableServiceImpl implements TimetableService {
         Timetable toSave;
         if (existing.isPresent()) {
             toSave = existing.get();
-            toSave.setSchedule(timetable.getSchedule());
+            toSave.setBatch(timetable.getBatch());
+            toSave.setPattern(timetable.getPattern());
+            toSave.setWef(timetable.getWef());
+            toSave.setClassroom(timetable.getClassroom());
+            toSave.setLab(timetable.getLab());
+            toSave.setClassCoordinator(timetable.getClassCoordinator());
+            toSave.setRows(timetable.getRows());
+            toSave.setCourses(timetable.getCourses());
             toSave.setUpdatedBy(uploader.getId());
             toSave.setUploaderName(accountDirectoryService.getDisplayName(uploader));
             toSave.setUpdatedAt(LocalDateTime.now());
@@ -44,7 +51,14 @@ public class TimetableServiceImpl implements TimetableService {
             toSave = Timetable.builder()
                     .department(timetable.getDepartment())
                     .semester(timetable.getSemester())
-                    .schedule(timetable.getSchedule())
+                    .batch(timetable.getBatch())
+                    .pattern(timetable.getPattern())
+                    .wef(timetable.getWef())
+                    .classroom(timetable.getClassroom())
+                    .lab(timetable.getLab())
+                    .classCoordinator(timetable.getClassCoordinator())
+                    .rows(timetable.getRows())
+                    .courses(timetable.getCourses())
                     .updatedBy(uploader.getId())
                     .uploaderName(accountDirectoryService.getDisplayName(uploader))
                     .updatedAt(LocalDateTime.now())
