@@ -136,21 +136,76 @@ export default function StudentDashboard({ user, summary }) {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <div key={stat.label} className="portal-panel portal-3d rounded-[2rem] p-6">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${stat.shell}`}>
-              <stat.icon size={22} />
-            </div>
-            <p className="mt-5 text-[11px] font-black uppercase tracking-[0.22em] text-slate-700">{stat.label}</p>
-            <p className="mt-2 text-3xl font-black text-slate-900">{stat.value}</p>
-          </div>
-        ))}
-      </section>
-
       <div className="grid gap-6 lg:grid-cols-12">
-        <section className="lg:col-span-8 space-y-6">
-          <div className="portal-panel portal-3d rounded-[2.4rem] p-8">
+        {/* ROW 1 LEFT: Stats (Spans 8) */}
+        <section className="lg:col-span-8">
+          <div className="grid gap-4 md:grid-cols-3 h-full">
+            {stats.map((stat) => (
+              <div key={stat.label} className="portal-panel portal-3d rounded-[2rem] p-6 flex flex-col justify-between">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${stat.shell}`}>
+                  <stat.icon size={22} />
+                </div>
+                <div>
+                  <p className="mt-5 text-[11px] font-black uppercase tracking-[0.22em] text-slate-700">{stat.label}</p>
+                  <p className="mt-2 text-3xl font-black text-slate-900">{stat.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ROW 1 RIGHT: Announcements (Spans 4) */}
+        <section className="lg:col-span-4">
+          <div className="portal-panel portal-3d rounded-[2.4rem] p-8 h-full flex flex-col justify-between">
+            <div>
+              <div className="portal-chip text-[10px] font-black uppercase tracking-[0.22em]">
+                <Clock size={12} />
+                Announcements
+              </div>
+              <div className="mt-6 space-y-4">
+                {summary?.recentAnnouncements?.length ? (
+                  summary.recentAnnouncements.slice(0, 2).map((announcement) => (
+                    announcement.fileUrl ? (
+                      <a
+                        key={announcement.id}
+                        href={announcement.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="portal-3d block rounded-[1.5rem] border border-slate-100 bg-slate-50/50 p-4 transition hover:border-amber-200 hover:bg-white animate-in"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[9px] font-black uppercase tracking-[0.15em] text-emerald-700">
+                            {announcement.subject || 'Academic Update'}
+                          </p>
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.1em] text-amber-800">
+                            Attachment
+                          </span>
+                        </div>
+                        <h3 className="mt-2 line-clamp-1 text-sm font-black text-slate-900">{announcement.title}</h3>
+                      </a>
+                    ) : (
+                      <div
+                        key={announcement.id}
+                        className="portal-3d block rounded-[1.5rem] border border-slate-100 bg-slate-50/50 p-4 bg-slate-50/30"
+                      >
+                        <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-600">
+                          {announcement.subject || 'Academic Update'}
+                        </p>
+                        <h3 className="mt-2 text-sm font-semibold text-slate-900 line-clamp-1">{announcement.title}</h3>
+                      </div>
+                    )
+                  ))
+                ) : (
+                  <p className="text-sm font-medium text-slate-700">No active academic announcements.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ROW 2 LEFT: Recent Materials (Spans 8) */}
+        <section className="lg:col-span-8">
+          <div className="portal-panel portal-3d rounded-[2.4rem] p-8 h-full">
             <div className="mb-8 flex items-center justify-between gap-4">
               <div>
                 <div className="portal-chip text-[10px] font-black uppercase tracking-[0.22em]">
@@ -197,152 +252,88 @@ export default function StudentDashboard({ user, summary }) {
           </div>
         </section>
 
-        <section className="lg:col-span-4 space-y-6">
-          <div className="portal-panel portal-3d rounded-[2.4rem] p-8">
-            <div className="portal-chip text-[10px] font-black uppercase tracking-[0.22em]">
-              <Clock size={12} />
-              Announcements
-            </div>
-            <div className="mt-6 space-y-4">
-              {summary?.recentAnnouncements?.length ? (
-                summary.recentAnnouncements.slice(0, 3).map((announcement) => (
-                  announcement.fileUrl ? (
-                    <a
-                      key={announcement.id}
-                      href={announcement.fileUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="portal-3d block rounded-[1.5rem] border border-slate-100 bg-slate-50/50 p-4 transition hover:border-amber-200 hover:bg-white"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-[9px] font-black uppercase tracking-[0.15em] text-emerald-700">
-                          {announcement.subject || 'Academic Update'}
-                        </p>
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.1em] text-amber-800">
-                          Attachment
-                        </span>
-                      </div>
-                      <h3 className="mt-2 line-clamp-2 text-sm font-black text-slate-900">{announcement.title}</h3>
-                    </a>
-                  ) : (
-                    <div
-                      key={announcement.id}
-                      className="portal-3d block rounded-[1.5rem] border border-slate-100 bg-slate-50/50 p-4 bg-slate-50/30"
-                    >
-                      <p className="text-[9px] font-black uppercase tracking-[0.15em] text-slate-600">
-                        {announcement.subject || 'Academic Update'}
-                      </p>
-                      <h3 className="mt-2 text-sm font-semibold text-slate-900">{announcement.title}</h3>
+        {/* ROW 2 RIGHT: Weekly Timetable (Spans 4) */}
+        <section className="lg:col-span-4">
+          <div className="portal-panel portal-3d rounded-[2.4rem] p-8 h-full flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                    <Calendar size={22} />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-700">Weekly Timetable</p>
+                    <h3 className="mt-1 text-base font-black text-slate-900">
+                      {user?.department || 'MCA'} - Sem {user?.semester || 1}
+                    </h3>
+                  </div>
+                </div>
+
+                {timetable && (
+                  <button
+                    onClick={() => setShowTimetableModal(true)}
+                    className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-[10px] font-black uppercase tracking-wider transition border border-amber-200/50"
+                  >
+                    View Full
+                  </button>
+                )}
+              </div>
+
+              {loadingTimetable ? (
+                <div className="flex items-center gap-3 py-4">
+                  <div className="w-5 h-5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-xs text-slate-500 font-bold uppercase">Loading schedule...</p>
+                </div>
+              ) : timetable && (timetable.schedule || timetable.rows) ? (
+                <div className="space-y-4">
+                  {/* Status Indicator */}
+                  <div className="flex items-center justify-between bg-emerald-50/50 border border-emerald-100/60 rounded-2xl px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">
+                        Active Schedule Loaded
+                      </span>
                     </div>
-                  )
-                ))
+                    <span className="text-[9px] font-bold text-slate-500">
+                      W.e.f. {timetable.wef || 'Immediate'}
+                    </span>
+                  </div>
+
+                  {/* Cohort Details Grid */}
+                  <div className="grid grid-cols-2 gap-3 bg-slate-50/60 border border-slate-100/80 rounded-2xl p-4">
+                    <div>
+                      <span className="block text-[8px] font-black uppercase tracking-wider text-slate-400 mb-0.5">Classroom</span>
+                      <span className="text-xs font-black text-slate-800">{timetable.classroom || 'Room -'}</span>
+                    </div>
+                    <div>
+                      <span className="block text-[8px] font-black uppercase tracking-wider text-slate-400 mb-0.5">Practical Lab</span>
+                      <span className="text-xs font-black text-slate-800">{timetable.lab || 'Lab -'}</span>
+                    </div>
+                    <div className="col-span-2 pt-2 border-t border-slate-250/50">
+                      <span className="block text-[8px] font-black uppercase tracking-wider text-slate-400 mb-0.5">Class Coordinator</span>
+                      <span className="text-xs font-bold text-slate-700">{timetable.classCoordinator || 'Not Assigned'}</span>
+                    </div>
+                  </div>
+
+                  {/* Main Action Button */}
+                  <button
+                    onClick={() => setShowTimetableModal(true)}
+                    className="w-full text-center py-3.5 rounded-2xl bg-[linear-gradient(135deg,#f59e0b_0%,#f97316_100%)] hover:opacity-95 hover:shadow-lg text-white text-xs font-black uppercase tracking-[0.18em] shadow-md transition duration-205 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Search size={14} />
+                    Launch Interactive Schedule
+                  </button>
+                </div>
               ) : (
-                <p className="text-sm font-medium text-slate-700">No active academic announcements.</p>
+                <div className="text-center py-8 px-4 bg-slate-50/30 rounded-xl border border-dashed border-slate-200">
+                  <p className="text-xs font-black uppercase tracking-[0.1em] text-slate-700 mb-1">No Timetable Uploaded</p>
+                  <p className="text-[10px] text-slate-500 font-semibold uppercase leading-normal">The HOD has not registered a schedule for your cohort yet.</p>
+                </div>
               )}
             </div>
-          </div>
-
-          <div className="portal-panel portal-3d rounded-[2.4rem] p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
-                  <Calendar size={22} />
-                </div>
-                <div>
-                  <p className="text-[11px] font-black uppercase tracking-[0.22em] text-slate-700">Weekly Timetable</p>
-                  <h3 className="mt-1 text-base font-black text-slate-900">
-                    {user?.department || 'MCA'} - Sem {user?.semester || 1}
-                  </h3>
-                </div>
-              </div>
-
-              {timetable && (
-                <button
-                  onClick={() => setShowTimetableModal(true)}
-                  className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-[10px] font-black uppercase tracking-wider transition border border-amber-200/50"
-                >
-                  View Full
-                </button>
-              )}
-            </div>
-
-            {loadingTimetable ? (
-              <p className="text-xs text-slate-500 font-bold uppercase animate-pulse">Loading schedule...</p>
-            ) : timetable && (timetable.schedule || timetable.rows) ? (
-              <>
-                {/* Mon - Sat selector pills */}
-                <div className="flex flex-wrap gap-1 mb-4 bg-slate-50 p-1 rounded-xl border border-slate-100">
-                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((d) => {
-                    const shortName = d.substring(0, 3);
-                    const isActive = activeDay === d;
-                    return (
-                      <button
-                        key={d}
-                        onClick={() => setActiveDay(d)}
-                        className={`flex-1 text-center py-1.5 rounded-lg text-[9px] font-black uppercase tracking-[0.05em] transition-all ${
-                          isActive
-                            ? 'bg-amber-500 text-white font-extrabold shadow-sm'
-                            : 'text-slate-600 hover:bg-slate-100'
-                        }`}
-                      >
-                        {shortName}
-                      </button>
-                    )
-                  })}
-                </div>
-
-                {/* Slots display */}
-                <div className="space-y-3 mb-4">
-                  {getActiveDaySlots().length ? (
-                    getActiveDaySlots().map((slot, index) => (
-                      <div 
-                        key={index} 
-                        className={`p-3 rounded-xl border transition duration-150 ${
-                          slot.isBreak 
-                            ? 'bg-amber-50/50 border-amber-200/40 hover:bg-amber-50' 
-                            : 'bg-slate-50/50 hover:bg-white border-slate-100'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <Clock size={11} className="text-amber-700" />
-                          <span className="text-[10px] font-bold text-slate-700 tracking-[0.02em]">{slot.time || 'TBD'}</span>
-                        </div>
-                        <h4 className={`text-xs font-black uppercase tracking-[0.05em] mb-1 ${
-                          slot.isBreak ? 'text-amber-900' : 'text-slate-900'
-                        }`}>
-                          {slot.subject || 'No Subject'}
-                        </h4>
-                        {!slot.isBreak && (
-                          <div className="flex flex-wrap justify-between items-center text-[10px] font-medium text-slate-700 gap-1 mt-2 pt-1 border-t border-dashed border-slate-200/60">
-                            <span>{slot.teacher || 'TBD'}</span>
-                            <span className="bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-[4px] font-black tracking-wider text-[8px] uppercase">
-                              {slot.classroom || 'Room -'}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-6 px-4 bg-slate-50/30 rounded-xl border border-dashed border-slate-200">
-                      <p className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-700">No classes scheduled</p>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => setShowTimetableModal(true)}
-                  className="w-full text-center py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black uppercase tracking-[0.15em] shadow-md hover:shadow-lg transition flex items-center justify-center gap-2"
-                >
-                  <Search size={14} />
-                  Full High-Fidelity Timetable
-                </button>
-              </>
-            ) : (
-              <div className="text-center py-8 px-4 bg-slate-50/30 rounded-xl border border-dashed border-slate-200">
-                <p className="text-xs font-black uppercase tracking-[0.1em] text-slate-700 mb-1">No Timetable Uploaded</p>
-                <p className="text-[10px] text-slate-500 font-semibold uppercase leading-normal">The HOD has not registered a schedule for your cohort yet.</p>
-              </div>
-            )}
           </div>
         </section>
       </div>
