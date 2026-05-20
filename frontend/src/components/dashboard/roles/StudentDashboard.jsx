@@ -51,6 +51,53 @@ export default function StudentDashboard({ user, summary }) {
     { label: 'Peer Access', value: user?.active ? 'Active' : 'Locked', icon: Users, shell: user?.active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' },
   ]
 
+  const getActiveDaySlots = () => {
+    if (!timetable) return []
+    
+    if (timetable.schedule) {
+      return timetable.schedule.find(s => s.day === activeDay)?.slots || []
+    }
+    
+    if (timetable.rows) {
+      const dayKey = activeDay.toLowerCase()
+      return timetable.rows
+        .map(row => {
+          const subjectCode = row[dayKey] || ''
+          
+          if (row.isBreak) {
+            return {
+              time: row.time,
+              subject: `${row.breakName || 'Break'}`,
+              isBreak: true,
+              teacher: 'Universal',
+              classroom: 'Campus'
+            }
+          }
+          
+          if (!subjectCode.trim()) return null
+          
+          // Try to look up subject info in the courses table
+          const course = timetable.courses?.find(c => 
+            c.code?.toLowerCase() === subjectCode.toLowerCase() || 
+            subjectCode.toLowerCase().includes(c.code?.toLowerCase())
+          )
+          
+          return {
+            time: row.time,
+            subject: course ? `${course.title} (${subjectCode})` : subjectCode,
+            teacher: course ? course.faculty : 'Faculty',
+            classroom: subjectCode.includes('Lab') || subjectCode.includes('(PR)') 
+              ? (timetable.lab || 'Lab') 
+              : (timetable.classroom || 'Classroom'),
+            isBreak: false
+          }
+        })
+        .filter(Boolean)
+    }
+    
+    return []
+  }
+
   return (
     <div className="space-y-6 pb-8 animate-in">
       <section className="portal-banner rounded-[2.4rem] p-8 sm:p-10">
@@ -221,7 +268,7 @@ export default function StudentDashboard({ user, summary }) {
 
             {loadingTimetable ? (
               <p className="text-xs text-slate-500 font-bold uppercase animate-pulse">Loading schedule...</p>
-            ) : timetable && timetable.schedule ? (
+            ) : timetable && (timetable.schedule || timetable.rows) ? (
               <>
                 {/* Mon - Sat selector pills */}
                 <div className="flex flex-wrap gap-1 mb-4 bg-slate-50 p-1 rounded-xl border border-slate-100">
@@ -246,18 +293,33 @@ export default function StudentDashboard({ user, summary }) {
 
                 {/* Slots display */}
                 <div className="space-y-3 mb-4">
-                  {timetable.schedule.find(s => s.day === activeDay)?.slots.length ? (
-                    timetable.schedule.find(s => s.day === activeDay).slots.map((slot, index) => (
-                      <div key={index} className="p-3 bg-slate-50/50 hover:bg-white rounded-xl border border-slate-100 transition duration-150">
+                  {getActiveDaySlots().length ? (
+                    getActiveDaySlots().map((slot, index) => (
+                      <div 
+                        key={index} 
+                        className={`p-3 rounded-xl border transition duration-150 ${
+                          slot.isBreak 
+                            ? 'bg-amber-50/50 border-amber-200/40 hover:bg-amber-50' 
+                            : 'bg-slate-50/50 hover:bg-white border-slate-100'
+                        }`}
+                      >
                         <div className="flex items-center gap-2 mb-1.5">
                           <Clock size={11} className="text-amber-700" />
                           <span className="text-[10px] font-bold text-slate-700 tracking-[0.02em]">{slot.time || 'TBD'}</span>
                         </div>
-                        <h4 className="text-xs font-black uppercase tracking-[0.05em] text-slate-900 mb-1">{slot.subject || 'No Subject'}</h4>
-                        <div className="flex flex-wrap justify-between items-center text-[10px] font-medium text-slate-700 gap-1 mt-2 pt-1 border-t border-dashed border-slate-200/60">
-                          <span>{slot.teacher || 'TBD'}</span>
-                          <span className="bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-[4px] font-black tracking-wider text-[8px] uppercase">{slot.classroom || 'Room -'}</span>
-                        </div>
+                        <h4 className={`text-xs font-black uppercase tracking-[0.05em] mb-1 ${
+                          slot.isBreak ? 'text-amber-900' : 'text-slate-900'
+                        }`}>
+                          {slot.subject || 'No Subject'}
+                        </h4>
+                        {!slot.isBreak && (
+                          <div className="flex flex-wrap justify-between items-center text-[10px] font-medium text-slate-700 gap-1 mt-2 pt-1 border-t border-dashed border-slate-200/60">
+                            <span>{slot.teacher || 'TBD'}</span>
+                            <span className="bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-[4px] font-black tracking-wider text-[8px] uppercase">
+                              {slot.classroom || 'Room -'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ))
                   ) : (

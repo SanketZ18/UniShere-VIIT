@@ -429,6 +429,16 @@ export default function HodDashboard({ user, summary }) {
                 <span className="text-sm font-black uppercase tracking-[0.1em] text-slate-900">Upload Resources</span>
                 <PlusCircle size={16} className="text-slate-700" />
               </Link>
+              <button
+                onClick={() => {
+                  setActiveTab('timetable')
+                  window.scrollTo({ top: 180, behavior: 'smooth' })
+                }}
+                className="w-full flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-5 py-4 transition hover:border-amber-200 cursor-pointer text-left"
+              >
+                <span className="text-sm font-black uppercase tracking-[0.1em] text-slate-900">Manage Timetable</span>
+                <Calendar size={16} className="text-slate-700" />
+              </button>
             </div>
           </div>
 
