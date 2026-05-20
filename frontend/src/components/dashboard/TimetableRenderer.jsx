@@ -78,7 +78,10 @@ const EMPTY_TEMPLATE = {
   ]
 }
 
-export default function TimetableRenderer({ timetableData, isEditMode = false, onSave, isSaving = false }) {
+// Helper function for deep copying template/timetable objects to prevent in-memory mutation overrides
+const deepCopy = (obj) => JSON.parse(JSON.stringify(obj))
+
+export default function TimetableRenderer({ timetableData, isEditMode = false, onSave, isSaving = false, semester = 1, department = 'MCA', onSemesterChange }) {
   // Local state for the editable timetable
   const [data, setData] = useState(() => {
     if (timetableData && timetableData.rows && timetableData.rows.length > 0) {
@@ -89,11 +92,15 @@ export default function TimetableRenderer({ timetableData, isEditMode = false, o
         lab: timetableData.lab || '',
         classCoordinator: timetableData.classCoordinator || '',
         pattern: timetableData.pattern || '',
-        rows: timetableData.rows || [],
-        courses: timetableData.courses || []
+        rows: deepCopy(timetableData.rows),
+        courses: deepCopy(timetableData.courses)
       }
     }
-    return MCA_I_TEMPLATE // Default to First Year Template
+    // Deep copy default templates based on current active year/semester:
+    // Semester 1 & 2 are First Year (MCA I Template)
+    // Semester 3 & 4 are Second Year (MCA II Template)
+    const isSecondYear = (semester === 3 || semester === 4)
+    return isSecondYear ? deepCopy(MCA_II_TEMPLATE) : deepCopy(MCA_I_TEMPLATE)
   })
 
   const [activeViewMode, setActiveViewMode] = useState(isEditMode ? 'edit' : 'view')
@@ -103,11 +110,11 @@ export default function TimetableRenderer({ timetableData, isEditMode = false, o
     if (!window.confirm('Are you sure you want to load this template? It will overwrite any unsaved changes.')) return
     
     if (templateType === 'mca1') {
-      setData({ ...MCA_I_TEMPLATE })
+      setData(deepCopy(MCA_I_TEMPLATE))
     } else if (templateType === 'mca2') {
-      setData({ ...MCA_II_TEMPLATE })
+      setData(deepCopy(MCA_II_TEMPLATE))
     } else {
-      setData({ ...EMPTY_TEMPLATE })
+      setData(deepCopy(EMPTY_TEMPLATE))
     }
   }
 
@@ -196,9 +203,10 @@ export default function TimetableRenderer({ timetableData, isEditMode = false, o
     <div className="space-y-6">
       {/* Editor Controls (Visible only for HOD/Admin in Edit Mode) */}
       {isEditMode && (
-        <div className="bg-amber-50 border border-amber-200 rounded-[1.8rem] p-6 flex flex-wrap items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-100 text-amber-700 rounded-xl">
+        <div className="bg-amber-50 border border-amber-200 rounded-[1.8rem] p-5 md:p-6 flex flex-col gap-4 shadow-sm">
+          {/* Upper Side: Text Header */}
+          <div className="flex items-center gap-3 w-full border-b border-amber-200 pb-3">
+            <div className="p-2.5 bg-amber-100 text-amber-700 rounded-xl shrink-0">
               <Edit2 size={20} />
             </div>
             <div>
@@ -206,38 +214,74 @@ export default function TimetableRenderer({ timetableData, isEditMode = false, o
               <p className="text-xs text-amber-700 font-semibold">Load pre-built templates or completely build a custom schedule from scratch.</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+
+          {/* Downside: All buttons in a single row (no scrollbar, perfectly responsive and padded) */}
+          <div className="flex flex-row items-center gap-2.5 w-full">
             <button
-              onClick={() => loadTemplate('mca1')}
-              className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl flex items-center gap-1.5 transition"
+              type="button"
+              onClick={() => {
+                if (onSemesterChange) {
+                  onSemesterChange(1) // Switch to Semester 1 (MCA I)
+                }
+              }}
+              className={`border text-[10px] md:text-xs font-black uppercase tracking-wider px-2 md:px-4 py-2 rounded-xl flex items-center justify-center gap-1.5 transition flex-1 shrink-0 ${
+                (semester === 1 || semester === 2)
+                  ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                  : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-800'
+              }`}
             >
-              <RefreshCw size={13} />
-              MCA I Template
+              <Calendar size={12} className="shrink-0" />
+              <span className="truncate">MCA I Template</span>
             </button>
+
             <button
-              onClick={() => loadTemplate('mca2')}
-              className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl flex items-center gap-1.5 transition"
+              type="button"
+              onClick={() => {
+                if (onSemesterChange) {
+                  onSemesterChange(3) // Switch to Semester 3 (MCA II)
+                }
+              }}
+              className={`border text-[10px] md:text-xs font-black uppercase tracking-wider px-2 md:px-4 py-2 rounded-xl flex items-center justify-center gap-1.5 transition flex-1 shrink-0 ${
+                (semester === 3 || semester === 4)
+                  ? 'bg-slate-900 border-slate-900 text-white shadow-sm'
+                  : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-800'
+              }`}
             >
-              <RefreshCw size={13} />
-              MCA II Template
+              <Calendar size={12} className="shrink-0" />
+              <span className="truncate">MCA II Template</span>
             </button>
+
             <button
-              onClick={() => loadTemplate('empty')}
-              className="bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl flex items-center gap-1.5 transition"
+              type="button"
+              onClick={() => {
+                if (!window.confirm('Are you sure you want to load the default template for this semester? It will overwrite any unsaved changes.')) return
+                if (semester === 1 || semester === 2) {
+                  setData(deepCopy(MCA_I_TEMPLATE))
+                } else if (semester === 3 || semester === 4) {
+                  setData(deepCopy(MCA_II_TEMPLATE))
+                } else {
+                  setData(deepCopy(EMPTY_TEMPLATE))
+                }
+              }}
+              className="bg-white border border-rose-200 hover:bg-rose-50 text-rose-700 text-[10px] md:text-xs font-black uppercase tracking-wider px-2 md:px-4 py-2 rounded-xl flex items-center justify-center gap-1.5 transition flex-1 shrink-0"
             >
-              Reset Blank
+              <RefreshCw size={12} className="shrink-0" />
+              <span className="truncate">Reset Template</span>
             </button>
-            <div className="w-[1px] h-8 bg-slate-200 mx-1 hidden sm:block" />
+
+            <div className="w-[1px] h-8 bg-amber-200 shrink-0 mx-0.5" />
+
             <button
+              type="button"
               onClick={() => setActiveViewMode(activeViewMode === 'view' ? 'edit' : 'view')}
-              className={`text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl flex items-center gap-1.5 transition ${
+              className={`text-[10px] md:text-xs font-black uppercase tracking-wider px-2 md:px-4 py-2 rounded-xl flex items-center justify-center gap-1.5 transition flex-1 shrink-0 ${
                 activeViewMode === 'view'
                   ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm'
                   : 'bg-slate-800 hover:bg-slate-900 text-white'
               }`}
             >
-              {activeViewMode === 'view' ? <Edit2 size={13} /> : <Eye size={13} />}
-              {activeViewMode === 'view' ? 'Edit Mode' : 'View Preview'}
+              {activeViewMode === 'view' ? <Edit2 size={12} className="shrink-0" /> : <Eye size={12} className="shrink-0" />}
+              <span className="truncate">{activeViewMode === 'view' ? 'Edit Mode' : 'View Preview'}</span>
             </button>
           </div>
         </div>

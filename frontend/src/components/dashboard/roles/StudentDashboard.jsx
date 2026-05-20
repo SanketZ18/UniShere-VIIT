@@ -362,7 +362,7 @@ export default function StudentDashboard({ user, summary }) {
             </div>
 
             <div className="border-t border-slate-100 pt-6">
-              <TimetableRenderer timetableData={timetable} isEditMode={false} />
+              <TimetableRenderer timetableData={timetable} semester={user?.semester || 1} department={user?.department || 'MCA'} isEditMode={false} />
             </div>
           </div>
         </div>

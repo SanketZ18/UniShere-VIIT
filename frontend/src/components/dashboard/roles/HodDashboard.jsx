@@ -403,10 +403,13 @@ export default function HodDashboard({ user, summary }) {
               ) : (
                 <TimetableRenderer
                   timetableData={timetableObject}
+                  semester={selectedSem}
+                  department={selectedDept}
                   key={`${selectedDept}-${selectedSem}-${JSON.stringify(timetableObject)}`}
                   isEditMode={true}
                   onSave={handleSaveTimetable}
                   isSaving={isSavingTimetable}
+                  onSemesterChange={setSelectedSem}
                 />
               )}
             </div>
