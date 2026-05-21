@@ -13,7 +13,9 @@ public record UserProfileResponse(
         java.time.LocalDate birthDate,
         Role role,
         Department department,
+        String designation,
         String batchYear,
+        Integer year,
         Integer semester,
         boolean active
 ) {

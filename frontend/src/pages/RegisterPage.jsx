@@ -30,7 +30,7 @@ const initialState = {
 
 export default function RegisterPage() {
   const { user, register, authBusy } = useAuth()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [form, setForm] = useState(() => {
     const roleParam = searchParams.get('role')
     return {
@@ -84,13 +84,25 @@ export default function RegisterPage() {
     const roleFilter = searchParams.get('role')
     const deptFilter = searchParams.get('dept')
     const yearFilter = searchParams.get('year')
-    
-    if (roleFilter && u.role !== roleFilter) return false
+
+    // If no role filter is set, default to showing the role from the active tab if possible
+    // but here we just follow the searchParams.
+
+    if (roleFilter === 'STAFF_LIST') {
+      // Custom filter for "All Staff" tab (everything except STUDENT)
+      if (u.role === 'STUDENT') return false
+    } else if (roleFilter && u.role !== roleFilter) {
+      return false
+    }
+
     if (deptFilter && u.department !== deptFilter) return false
     if (yearFilter && String(u.year) !== yearFilter) return false
-    
+
     return true
   })
+
+  // Determine current active tab
+  const currentTab = searchParams.get('role') === 'STUDENT' || !searchParams.get('role') ? 'STUDENT' : 'STAFF';
 
   const visibleRoles = roleOptions.filter((role) => {
     if (user?.role === 'SUPER_ADMIN') return true
@@ -170,7 +182,7 @@ export default function RegisterPage() {
       return
     }
     if (!window.confirm(`WARNING: Are you sure you want to delete ALL students in Batch ${batch}? This action is IRREVERSIBLE.`)) return
-    
+
     try {
       // Optimistic update
       setUsers(prev => prev.filter(u => u.batchYear !== batch))
@@ -245,17 +257,17 @@ export default function RegisterPage() {
 
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-slate-950 uppercase tracking-widest ml-1">Mobile Number</label>
-                  <input
-                    required
-                    type="tel"
-                    placeholder="Enter 10-digit mobile"
-                    value={form.mobile}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      setForm({ ...form, mobile: val });
-                    }}
-                    className="portal-form-field w-full px-4 py-3 text-sm font-semibold text-black"
-                  />
+                <input
+                  required
+                  type="tel"
+                  placeholder="Enter 10-digit mobile"
+                  value={form.mobile}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                    setForm({ ...form, mobile: val });
+                  }}
+                  className="portal-form-field w-full px-4 py-3 text-sm font-semibold text-black"
+                />
               </div>
 
               <div className="space-y-2">
@@ -368,11 +380,11 @@ export default function RegisterPage() {
             </div>
             <p className="text-xs font-medium leading-relaxed text-slate-700 mb-6">Process multiple student records via secure Excel synchronization.</p>
             <form onSubmit={handleBulkUpload} className="space-y-4">
-              <input 
-                type="file" 
-                accept=".xlsx" 
-                onChange={(e) => setExcelFile(e.target.files[0])} 
-                className="w-full text-[10px] text-slate-800 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-200 file:px-4 file:py-2 file:text-[10px] file:font-black file:uppercase file:text-slate-900 hover:file:bg-slate-300 transition" 
+              <input
+                type="file"
+                accept=".xlsx"
+                onChange={(e) => setExcelFile(e.target.files[0])}
+                className="w-full text-[10px] text-slate-800 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-200 file:px-4 file:py-2 file:text-[10px] file:font-black file:uppercase file:text-slate-900 hover:file:bg-slate-300 transition"
               />
               <button disabled={!excelFile || bulkProcessing} className="portal-button-primary w-full rounded-xl py-3 text-xs font-bold uppercase tracking-widest">
                 {bulkProcessing ? 'Processing...' : 'Upload Data Node'}
@@ -382,43 +394,43 @@ export default function RegisterPage() {
 
           {/* Directory Stats */}
           <section className="portal-panel portal-3d rounded-2xl p-8">
-             <h3 className="text-lg font-bold text-slate-950 mb-6 flex items-center gap-3">
-                <Database size={18} className="text-amber-600" />
-                Registry Pulse
-             </h3>
-             <div className="space-y-3">
-               <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
-                 <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">Total Nodes</span>
-                 <span className="text-lg font-bold text-slate-950">{users.length}</span>
-               </div>
-               <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
-                 <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">Registry Load</span>
-                 <span className="text-[10px] font-black text-emerald-600 uppercase">Optimal</span>
-               </div>
-             </div>
+            <h3 className="text-lg font-bold text-slate-950 mb-6 flex items-center gap-3">
+              <Database size={18} className="text-amber-600" />
+              Registry Pulse
+            </h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">Total Nodes</span>
+                <span className="text-lg font-bold text-slate-950">{users.length}</span>
+              </div>
+              <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200">
+                <span className="text-[10px] font-bold text-slate-700 uppercase tracking-widest">Registry Load</span>
+                <span className="text-[10px] font-black text-emerald-600 uppercase">Optimal</span>
+              </div>
+            </div>
           </section>
 
           {/* Bulk Cleanup Tools */}
           <section className="portal-panel portal-3d rounded-2xl p-8 border-rose-500/10 bg-rose-500/5">
-             <h3 className="text-lg font-bold text-rose-950 mb-6 flex items-center gap-3">
-                <AlertTriangle size={18} className="text-rose-600" />
-                Registry Cleanup
-             </h3>
-             <p className="text-[10px] font-bold text-rose-900 uppercase tracking-widest mb-4">Wipe Data by Batch Year</p>
-             <div className="space-y-4">
-                <input 
-                  type="text" 
-                  placeholder="Enter Batch (e.g. 2022-26)" 
-                  id="bulkBatchInput"
-                  className="portal-form-field w-full px-4 py-2.5 text-xs font-bold border-rose-200 focus:border-rose-500" 
-                />
-                <button 
-                  onClick={() => handleBulkDeleteByBatch(document.getElementById('bulkBatchInput').value)}
-                  className="w-full rounded-xl bg-rose-600 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-rose-600/20 hover:bg-rose-700 transition"
-                >
-                  Confirm Batch Wipe
-                </button>
-             </div>
+            <h3 className="text-lg font-bold text-rose-950 mb-6 flex items-center gap-3">
+              <AlertTriangle size={18} className="text-rose-600" />
+              Registry Cleanup
+            </h3>
+            <p className="text-[10px] font-bold text-rose-900 uppercase tracking-widest mb-4">Wipe Data by Batch Year</p>
+            <div className="space-y-4">
+              <input
+                type="text"
+                placeholder="Enter Batch (e.g. 2022-26)"
+                id="bulkBatchInput"
+                className="portal-form-field w-full px-4 py-2.5 text-xs font-bold border-rose-200 focus:border-rose-500"
+              />
+              <button
+                onClick={() => handleBulkDeleteByBatch(document.getElementById('bulkBatchInput').value)}
+                className="w-full rounded-xl bg-rose-600 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-rose-600/20 hover:bg-rose-700 transition"
+              >
+                Confirm Batch Wipe
+              </button>
+            </div>
           </section>
         </div>
       </div>
@@ -431,7 +443,7 @@ export default function RegisterPage() {
             <div className="flex items-center gap-3 mt-1">
               <p className="text-slate-700 text-sm">Registry of all provisioned departmental credentials.</p>
               {(searchParams.get('role') || searchParams.get('dept') || searchParams.get('year')) && (
-                <button 
+                <button
                   onClick={() => window.history.replaceState(null, '', window.location.pathname)}
                   className="rounded bg-orange-500/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-orange-300 transition-colors hover:bg-orange-500/20"
                 >
@@ -445,13 +457,29 @@ export default function RegisterPage() {
           </button>
         </div>
 
+        {/* Tab Switcher */}
+        <div className="mb-8 flex border-b border-slate-100">
+          <button
+            onClick={() => setSearchParams({ role: 'STUDENT' })}
+            className={`px-6 py-3 text-xs font-black uppercase tracking-widest transition-all ${currentTab === 'STUDENT' ? 'border-b-2 border-orange-500 text-orange-600' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            Student Registry
+          </button>
+          <button
+            onClick={() => setSearchParams({ role: 'STAFF_LIST' })}
+            className={`px-6 py-3 text-xs font-black uppercase tracking-widest transition-all ${currentTab === 'STAFF' ? 'border-b-2 border-orange-500 text-orange-600' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            Professional Staff
+          </button>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100 text-xs font-bold uppercase tracking-widest text-slate-900">
                 <th className="pb-4 text-left font-bold">Institutional Identity</th>
-                <th className="pb-4 text-left font-bold">Student Name</th>
-                <th className="pb-4 text-left font-bold">Batch</th>
+                <th className="pb-4 text-left font-bold">{currentTab === 'STUDENT' ? 'Student Name' : 'Profile Name'}</th>
+                <th className="pb-4 text-left font-bold">{currentTab === 'STUDENT' ? 'Batch' : 'Designation'}</th>
                 <th className="pb-4 text-left font-bold">Department</th>
                 <th className="pb-4 text-left font-bold">Access</th>
                 <th className="pb-4 text-right font-bold">Actions</th>
@@ -459,9 +487,9 @@ export default function RegisterPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loadingUsers && users.length === 0 ? (
-                <tr><td colSpan="4" className="py-20 text-center text-xs font-bold text-slate-700 uppercase tracking-[0.2em]">Synchronizing Registry...</td></tr>
+                <tr><td colSpan="6" className="py-20 text-center text-xs font-bold text-slate-700 uppercase tracking-[0.2em]">Synchronizing Registry...</td></tr>
               ) : filteredUsers.length === 0 ? (
-                <tr><td colSpan="4" className="py-20 text-center text-xs font-bold text-slate-800 uppercase tracking-[0.2em]">No records found for this node</td></tr>
+                <tr><td colSpan="6" className="py-20 text-center text-xs font-bold text-slate-800 uppercase tracking-[0.2em]">No records found for this node</td></tr>
               ) : filteredUsers.map((u) => (
                 <tr key={u.accountId} className="group transition hover:bg-slate-50/50">
                   <td className="py-5">
@@ -471,7 +499,9 @@ export default function RegisterPage() {
                   <td className="py-5">
                     <div className="text-base font-bold text-slate-950">{u.fullName}</div>
                   </td>
-                  <td className="py-5 text-sm font-bold text-amber-600 uppercase tracking-widest">{u.batchYear || 'N/A'}</td>
+                  <td className="py-5 text-sm font-bold text-amber-600 uppercase tracking-widest">
+                    {currentTab === 'STUDENT' ? (u.batchYear || 'N/A') : (u.designation || u.role)}
+                  </td>
                   <td className="py-5 text-sm font-bold text-slate-700 uppercase tracking-wider">{u.department} {u.year ? `• Y${u.year}` : ''}</td>
                   <td className="py-5">
                     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${u.active ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
@@ -481,15 +511,15 @@ export default function RegisterPage() {
                   </td>
                   <td className="py-5 text-right">
                     <div className="flex justify-end gap-2">
-                      <button 
-                        onClick={() => handleToggleStatus(u.accountId)} 
+                      <button
+                        onClick={() => handleToggleStatus(u.accountId)}
                         title={u.active ? 'Deactivate Access' : 'Activate Access'}
                         className={`rounded-lg p-2 transition shadow-sm ${u.active ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
                       >
                         {u.active ? <UserX size={18} /> : <UserCheck size={18} />}
                       </button>
-                      <button 
-                        onClick={() => handleDeleteUser(u.accountId)} 
+                      <button
+                        onClick={() => handleDeleteUser(u.accountId)}
                         className="rounded-lg p-2 bg-rose-100 text-rose-700 hover:bg-rose-200 transition shadow-sm"
                         title="Delete User"
                       >

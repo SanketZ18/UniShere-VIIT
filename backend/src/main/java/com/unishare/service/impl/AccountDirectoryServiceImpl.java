@@ -34,11 +34,11 @@ public class AccountDirectoryServiceImpl implements AccountDirectoryService {
         if (account.getRole() == Role.STUDENT) {
             Student student = studentRepository.findById(account.getUserId())
                     .orElseThrow(() -> new ResourceNotFoundException("Student profile not found"));
-            return PortalMapper.toUserProfile(account, student.getFullName(), student.getDepartment(), student.getMobile(), student.getGender(), student.getBirthDate(), student.getBatchYear(), student.getSemester());
+            return PortalMapper.toUserProfile(account, student.getFullName(), student.getDepartment(), student.getMobile(), student.getGender(), student.getBirthDate(), null, student.getBatchYear(), student.getYear(), student.getSemester());
         }
         Staff staff = staffRepository.findById(account.getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("Staff profile not found"));
-        return PortalMapper.toUserProfile(account, staff.getFullName(), staff.getDepartment(), staff.getMobile(), staff.getGender(), staff.getBirthDate(), null, null);
+        return PortalMapper.toUserProfile(account, staff.getFullName(), staff.getDepartment(), staff.getMobile(), staff.getGender(), staff.getBirthDate(), staff.getDesignation(), null, null, null);
     }
 
     @Override
