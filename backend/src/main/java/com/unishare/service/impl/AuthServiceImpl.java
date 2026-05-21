@@ -298,45 +298,6 @@ public class AuthServiceImpl implements AuthService {
             log.error("Failed to bootstrap super admin account: {}", e.getMessage());
         }
 
-        // Bootstrap Dummy HOD
-        try {
-            bootstrapDummyUser("hod@unishare.com", "hod123", "Dr. Dummy HOD", Role.HOD, "HOD-DUMMY", Department.MCA);
-        } catch (Exception e) {
-            log.error("Failed to bootstrap dummy HOD account: {}", e.getMessage());
-        }
-        
-        // Bootstrap Dummy Senior Clerk
-        try {
-            bootstrapDummyUser("clerk@unishare.com", "clerk123", "Mr. Dummy Clerk", Role.SENIOR_CLERK, "CLERK-DUMMY", Department.MCA);
-        } catch (Exception e) {
-            log.error("Failed to bootstrap dummy clerk account: {}", e.getMessage());
-        }
-        
-        // Bootstrap Dummy Director
-        try {
-            bootstrapDummyUser("director@unishare.com", "director123", "Prof. Dummy Director", Role.DIRECTOR, "DIR-DUMMY", Department.COMMON);
-        } catch (Exception e) {
-            log.error("Failed to bootstrap dummy director account: {}", e.getMessage());
-        }
-    }
-
-    private void bootstrapDummyUser(String email, String password, String name, Role role, String staffId, Department dept) {
-        if (!userAccountRepository.existsByEmailIgnoreCase(email.toLowerCase(Locale.ROOT)) &&
-                !staffRepository.existsByStaffId(staffId)) {
-            RegisterRequest request = new RegisterRequest();
-            request.setRole(role);
-            request.setEmail(email.toLowerCase(Locale.ROOT));
-            request.setPassword(password);
-            request.setFullName(name);
-            request.setMobile("9876543210");
-            request.setGender(com.unishare.model.enums.Gender.OTHER);
-            request.setDepartment(dept);
-            request.setStatus(com.unishare.model.enums.UserStatus.ACTIVE);
-            request.setStaffId(staffId);
-            request.setBirthDate(java.time.LocalDate.of(1990, 1, 1));
-            createStaffAccount(request, Role.SUPER_ADMIN);
-            log.info("Bootstrap dummy {} account created for {}", role, email);
-        }
     }
 
     private UserProfileResponse createStudentAccount(RegisterRequest request, Role creatorRole) {
