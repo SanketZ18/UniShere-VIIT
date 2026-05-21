@@ -88,7 +88,7 @@ export default function RegisterPage() {
     // If no role filter is set, default to showing the role from the active tab if possible
     // but here we just follow the searchParams.
 
-    if (roleFilter === 'STAFF_LIST') {
+    if (roleFilter === 'STAFF_LIST' || roleFilter === 'STAFF') {
       // Custom filter for "All Staff" tab (everything except STUDENT)
       if (u.role === 'STUDENT') return false
     } else if (roleFilter && u.role !== roleFilter) {
